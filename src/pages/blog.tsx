@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Fragment } from 'react';
-import { collection, addDoc, getDocs, query, orderBy, Timestamp } from 'firebase/firestore';
+import { collection, addDoc, getDocs, getDoc, setDoc, query, orderBy, Timestamp } from 'firebase/firestore';
 import { db, storage } from '@/firebase/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -24,6 +24,8 @@ const userNavigation = [
   { name: 'MY BLOGS', href: '/myblogs'},
   { name: 'SIGN OUT', href: '/' }
 ];
+
+const regions = ['Luzon', 'Visayas', 'Mindanao'];
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ');
@@ -60,6 +62,7 @@ export default function Blog({ children, title = "" }: ComponentProps) {
   const [posts, setPosts] = useState<Post[]>([]);
   const [image, setImage] = useState<File | null>(null);
   const [likedPosts, setLikedPosts] = useState<string[]>([]);
+  const [selectedRegion, setSelectedRegion] = useState<string>('');
 
   useEffect(() => {
     fetchPosts();
@@ -68,6 +71,32 @@ export default function Blog({ children, title = "" }: ComponentProps) {
   const toggleExpanded = () => {
     setExpanded(!expanded);
   };
+
+  const handleRegionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedRegion(e.target.value);
+  };
+
+  const updateTagCollection = async (postId: string) => {
+    if (!selectedRegion) return;
+
+    // Check if the selected region exists in the tags collection
+    const tagRef = doc(db, 'tags', selectedRegion);
+    const tagSnap = await getDoc(tagRef);
+
+    if (tagSnap.exists()) {
+      // Update the document with the postId
+      await updateDoc(tagRef, {
+        postId: [...tagSnap.data().postId, postId]
+      });
+    } else {
+      // Create a new document for the region and add the postId
+      await setDoc(tagRef, {
+        postId: [postId]
+      });
+    }
+  };
+
+
 
   const fetchPosts = async () => {
     const q = query(collection(db, 'posts'), orderBy('createdAt', 'desc'));
@@ -112,7 +141,7 @@ export default function Blog({ children, title = "" }: ComponentProps) {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!postText || !image) return;
+    if (!postText || !image || !selectedRegion) return;
   
     let imageUrl = '';
     if (image) {
@@ -134,6 +163,8 @@ export default function Blog({ children, title = "" }: ComponentProps) {
       usersLiked: [],
       comments: [],
     });
+
+    await updateTagCollection(postDocRef.id);
 
     setPostText('');
     setImage(null);
@@ -291,25 +322,28 @@ export default function Blog({ children, title = "" }: ComponentProps) {
               maxLength={50}
             />
             <input type="file" onChange={handleImageChange} className="w-full mb-4" />
+            <div className="mb-4">
+              <label htmlFor="region" className="block text-sm font-medium text-gray-700">
+                Region
+              </label>
+              <select
+                id="region"
+                name="region"
+                className="mt-1 border block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-black sm:text-sm rounded-md"
+                value={selectedRegion}
+                onChange={handleRegionChange}
+              >
+                <option value="">Select a region</option>
+                {regions.map(region => (
+                  <option key={region} value={region}>{region}</option>
+                ))}
+              </select>
+            </div>
             <button type="submit" className="w-full p-2 bg-[#234F91] text-white rounded-full">
               Post
             </button>
           </form>
-          {/*Your Posts */}
-          <div className="w-full max-w-lg overflow-y-auto">
-          <div className="bg-white p-5 rounded-xl mb-6">
-            <p className="font-inter">
-              YOUR TOTAL POSTS: {posts.filter(post => post.userId === user?.uid).length}
-            </p>
-            <div className='border my-5'></div>
-            <p>
-              YOUR TOTAL LIKES: {posts.filter(post => post.userId === user?.uid).reduce((acc, post) => acc + (post.usersLiked ? post.usersLiked.length : 0), 0)}
-            </p>
-          </div>
         </div>
-
-        </div>
-
         {/* Posts Section */}
         <div>
           <div className="bg-gray-300 h-full">
@@ -322,7 +356,7 @@ export default function Blog({ children, title = "" }: ComponentProps) {
                   <p>No current blogs</p>
                 ) : (
                   posts.map((post) => (
-                    <div key={post.id} className="bg-white rounded w-2/3border shadow">
+                    <div key={post.id} className="bg-white rounded mb-5 border shadow">
                       <div className='flex items-center font-inter w-full border p-4'>
                         <Image
                           src={post.userProfilePhoto ?? '/default-profile-image.jpg'}
@@ -371,7 +405,7 @@ export default function Blog({ children, title = "" }: ComponentProps) {
                       <form onSubmit={(e) => handleAddComment(e, post.id)} className="px-4 pb-4 border-t">
                         <textarea
                           placeholder="Add a comment..."
-                          className="w-full p-2 mb-2 border-2 rounded resize-none"
+                          className="w-full p-2 mt-2 border-2 rounded resize-none"
                         />
                         <button type="submit" className="px-4 py-2 bg-gray-800 text-white rounded-full">
                           Comment

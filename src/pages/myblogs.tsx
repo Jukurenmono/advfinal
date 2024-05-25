@@ -74,7 +74,7 @@ export default function MyBlogs() {
             <h1 className="text-2xl font-bold m-4 text-center">My Blogs</h1>
         </div>
         {posts.length === 0 ? (
-          <p>No current blogs</p>
+          <p className='text-center text-xl font-bold my-20'>No current blogs</p>
         ) : (
           <div className="w-full overflow-y-auto p-5 max-h-[360px]">
             <ul className="space-y-4 grid sm:grid-cols-2 gap-4">
@@ -127,7 +127,16 @@ export default function MyBlogs() {
             </ul>
           </div>
         )}
-        <div className='border bg-white h-full w-full p-4'>
+        <div className='border bg-white h-full w-full p-4 rounded'>
+        <div className="bg-white p-5 rounded-xl">
+            <p className="font-inter">
+              YOUR TOTAL POSTS: {posts.filter(post => post.userId === user?.uid).length}
+            </p>
+            <div className='border my-5'></div>
+            <p>
+              YOUR TOTAL LIKES: {posts.filter(post => post.userId === user?.uid).reduce((acc, post) => acc + (post.usersLiked ? post.usersLiked.length : 0), 0)}
+            </p>
+          </div>
             <button className='bg-black rounded-full text-sm p-2'>
                 <Link href="/blog">
                 <p className="text-white cursor-pointer">Back to Blog</p>
