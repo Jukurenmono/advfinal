@@ -4,6 +4,7 @@ import { TrashIcon } from '@heroicons/react/24/outline';
 import { db } from '@/firebase/firebaseConfig';
 import { deleteDoc } from 'firebase/firestore';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import useUser from '@/hooks/useUser';
 
 type Post = {
@@ -30,6 +31,7 @@ export default function MyBlogs() {
   const { user } = useUser();
   const [posts, setPosts] = useState<Post[]>([]);
   const [expanded, setExpanded] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     fetchUserPosts();
@@ -138,7 +140,10 @@ export default function MyBlogs() {
             </p>
           </div>
             <button className='bg-black rounded-full text-sm p-2'>
-                <Link href="/blog">
+                <Link
+                href=''
+                onClick={() => router.back()}
+                >
                 <p className="text-white cursor-pointer">Back to Blog</p>
                 </Link>
             </button>

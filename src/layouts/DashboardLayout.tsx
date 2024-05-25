@@ -69,7 +69,7 @@ export default function DashboardLayout({ children, title = "" }: ComponentProps
                                     href={item.href}
                                     className={classNames(
                                     active ? 'bg-gray-100' : '',
-                                    'block w-full px-4 text-xs text-center font-inter',
+                                    'block w-full mt-2 px-4 text-xs text-center font-inter',
                                     item.name === 'SIGN OUT' ? 'text-white' : 'text-black',
                                     )}
                                     onClick={item.name === 'SIGN OUT' ? logout : undefined}
